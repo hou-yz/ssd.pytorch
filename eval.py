@@ -23,6 +23,8 @@ import numpy as np
 import pickle
 import cv2
 
+os.environ['CUDA_VISIBLE_DEVICES']='2'
+
 if sys.version_info[0] == 2:
     import xml.etree.cElementTree as ET
 else:

@@ -5,6 +5,7 @@ from torch.autograd import Variable
 from layers import *
 from data import voc, coco
 import os
+import time
 
 
 class SSD(nn.Module):
@@ -70,28 +71,50 @@ class SSD(nn.Module):
         loc = list()
         conf = list()
 
+        t0=time.time()
+
         # apply vgg up to conv4_3 relu
         for k in range(23):
             x = self.vgg[k](x)
+            print(x.shape)
+            t1=time.time()
+            print(t1-t0)
 
         s = self.L2Norm(x)
         sources.append(s)
 
+        print('vgg up to conv4_3')
+
         # apply vgg up to fc7
         for k in range(23, len(self.vgg)):
             x = self.vgg[k](x)
+            print(x.shape)
+            t1=time.time()
+            print(t1-t0)
         sources.append(x)
+
+        print('vgg up to fc7')
 
         # apply extra layers and cache source layer outputs
         for k, v in enumerate(self.extras):
             x = F.relu(v(x), inplace=True)
+            print(x.shape)
+            t1=time.time()
+            print(t1-t0)
             if k % 2 == 1:
                 sources.append(x)
+
+        print('up to extra conv source6')
 
         # apply multibox head to source layers
         for (x, l, c) in zip(sources, self.loc, self.conf):
             loc.append(l(x).permute(0, 2, 3, 1).contiguous())
             conf.append(c(x).permute(0, 2, 3, 1).contiguous())
+            t1=time.time()
+            print(t1-t0)
+
+        print('up to multibox regression for source6')
+
 
         loc = torch.cat([o.view(o.size(0), -1) for o in loc], 1)
         conf = torch.cat([o.view(o.size(0), -1) for o in conf], 1)
